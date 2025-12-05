@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Kulüpler - Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Tüm Kulüpler</h1>
+    {% if current_user.is_authenticated %}
+        <a href="{{ url_for('club.create_club') }}" class="btn btn-primary">Yeni Kulüp Oluştur</a>
+    {% endif %}
+</div>
+
+<div class="row">
+    {% if clubs %}
+        {% for club in clubs %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ club.name }}</h5>
+                        <p class="card-text">{{ club.description }}</p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Oluşturulma: {{ club.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                <br>
+                                Etkinlik Sayısı: {{ club.events|length }}
+                            </small>
+                        </p>
+                    </div>
+                    <div class="card-footer d-flex gap-2">
+                        <a href="{{ url_for('club.view_club', club_id=club.id) }}" class="btn btn-sm btn-primary">Detayları Gör</a>
+                        {% if current_user.is_authenticated and current_user.id == club.president_id %}
+                            <a href="{{ url_for('event.create_event', club_id=club.id) }}" class="btn btn-sm btn-success">Etkinlik Oluştur</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                Henüz kulüp bulunmamaktadır.
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
