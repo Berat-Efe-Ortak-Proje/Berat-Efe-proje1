@@ -4,9 +4,12 @@ import sys
 # 1/ klasörünü Python path'ine ekle
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '1'))
 
-from app import create_app
-
-app = create_app()
+try:
+    from app import create_app
+    app = create_app()
+except ImportError as e:
+    print(f"Import Error: {e}")
+    sys.exit(1)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
