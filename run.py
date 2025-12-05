@@ -4,14 +4,13 @@ import sys
 # 1/ klasörünü Python path'ine ekle
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '1'))
 
-try:
-    from app import create_app
-    app = create_app()
-except ImportError as e:
-    print(f"Import Error: {e}")
-    sys.exit(1)
+from app import create_app
+
+print("Creating Flask app...")
+app = create_app()
+print("Flask app created successfully!")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_ENV') == 'development'
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    print(f"Starting Flask app on port {port}...")
+    app.run(host='0.0.0.0', port=port, debug=False)
