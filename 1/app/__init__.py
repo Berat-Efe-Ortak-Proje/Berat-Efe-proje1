@@ -7,19 +7,30 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 
 def create_app():
-    app = Flask(__name__)
-    
-    # Çevresel değişkenlerden ayarları al
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
-    
-    # Veritabanı URI'sini ayarla (Render için PostgreSQL desteği eklenebilir)
-    database_url = os.environ.get('DATABASE_URL', 'sqlite:///club_management.db')
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
+    # instance_relative_config=True allows using the instance folder for DB
+    app = Flask(__name__, instance_relative_config=True)
+
+    # Default configs
+    app.config.from_mapping(
+        SECRET_KEY=os.environ.get('SECRET_KEY', 'dev-key-change-in-production'),
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    )
+
+    # DATABASE_URL can be provided by Render (Postgres) or left empty for SQLite
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    else:
+        # Ensure instance folder exists and use it for the SQLite DB file
+        try:
+            os.makedirs(app.instance_path, exist_ok=True)
+        except Exception:
+            pass
+        db_path = os.path.join(app.instance_path, 'club_management.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
