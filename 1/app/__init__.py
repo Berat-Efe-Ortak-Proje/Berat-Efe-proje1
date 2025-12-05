@@ -25,14 +25,20 @@ def create_app():
     login_manager.login_view = 'auth.login'
     
     with app.app_context():
-        from . import models
-        from .routes import auth_bp, club_bp, event_bp, main_bp
-        
-        app.register_blueprint(auth_bp, url_prefix='/auth')
-        app.register_blueprint(club_bp, url_prefix='/club')
-        app.register_blueprint(event_bp, url_prefix='/event')
-        app.register_blueprint(main_bp)
-        
-        db.create_all()
+        try:
+            from . import models
+            from .routes import auth_bp, club_bp, event_bp, main_bp
+            
+            app.register_blueprint(auth_bp, url_prefix='/auth')
+            app.register_blueprint(club_bp, url_prefix='/club')
+            app.register_blueprint(event_bp, url_prefix='/event')
+            app.register_blueprint(main_bp)
+            
+            db.create_all()
+        except Exception as e:
+            print(f"Error during app initialization: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
     
     return app
