@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}{{ club.name }} - Öğrenci Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>{{ club.name }}</h1>
+        <p>{{ club.description }}</p>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Üye Sayısı</h5>
+                <p class="card-text display-4">{{ club.members|length }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <h2>Etkinlikler</h2>
+        {% if current_user.is_authenticated and current_user.id == club.president_id %}
+            <a href="{{ url_for('event.create_event', club_id=club.id) }}" class="btn btn-success mb-3">Yeni Etkinlik Oluştur</a>
+        {% endif %}
+        
+        {% if events %}
+            <div class="row">
+                {% for event in events %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ event.name }}</h5>
+                                <p class="card-text">{{ event.description }}</p>
+                                <p class="text-muted">
+                                    <small>Tarih: {{ event.date }}</small><br>
+                                    <small>Yer: {{ event.location }}</small>
+                                </p>
+                                <a href="{{ url_for('event.view_event', event_id=event.id) }}" class="btn btn-sm btn-primary">Detaylar</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Henüz etkinlik yok.</p>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <h3>Üyeler</h3>
+        <div class="list-group">
+            {% for member in club.members %}
+                <a href="#" class="list-group-item list-group-item-action">
+                    {{ member.username }}
+                    <small class="text-muted d-block">{{ member.email }}</small>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

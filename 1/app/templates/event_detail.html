@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.name }} - Öğrenci Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>{{ event.name }}</h1>
+        <p>{{ event.description }}</p>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Etkinlik Bilgileri</h5>
+                <p><strong>Tarih:</strong> {{ event.date.strftime('%d.%m.%Y %H:%M') }}</p>
+                <p><strong>Yer:</strong> {{ event.location }}</p>
+                <p><strong>Kulüp:</strong> <a href="{{ url_for('club.view_club', club_id=event.club_id) }}">{{ event.club.name }}</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Katılımcılar</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Katılımcı Sayısı:</strong> {{ event.attendees|length }}</p>
+                <div class="list-group">
+                    {% for attendee in event.attendees %}
+                        <a href="#" class="list-group-item list-group-item-action">
+                            {{ attendee.username }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
