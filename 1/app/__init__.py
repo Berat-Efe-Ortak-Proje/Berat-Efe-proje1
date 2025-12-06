@@ -111,7 +111,8 @@ def create_app():
                 clubs_to_remove = [
                     'Dans Topluluğu',
                     'Girişimcilik ve Kariyer Kulübü',
-                    'Doğa Sporları Kulübü'
+                    'Doğa Sporları Kulübü',
+                    'Fotoğrafçılık Topluluğu'
                 ]
                 for name in clubs_to_remove:
                     c = Club.query.filter_by(name=name).first()
@@ -130,8 +131,7 @@ def create_app():
                     ('Güzel Sanatlar Kulübü', 'Resim ve heykel çalışmaları.', 'club3.svg'),
                     ('Müzik Topluluğu', 'Müzik pratikleri, konserler ve performanslar.', 'club4.svg'),
                     ('Edebiyat ve Kültür Kulübü', 'Okuma grupları ve edebi etkinlikler.', 'club5.svg'),
-                    ('Sahne Sanatları Kulübü', 'Sahne sanatları ve oyunculuk atölyeleri.', 'club3.svg'),
-                    ('Fotoğrafçılık Topluluğu', 'Fotoğraf gezileri ve sergiler.', 'club3.svg')
+                    ('Sahne Sanatları Kulübü', 'Sahne sanatları ve oyunculuk atölyeleri.', 'club3.svg')
                 ]
 
                 for i, (name, desc, img_file) in enumerate(club_data):
