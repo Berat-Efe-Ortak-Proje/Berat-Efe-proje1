@@ -112,7 +112,7 @@ def create_app():
                         club = Club(
                             name=name, 
                             description=desc, 
-                            image_url=url_for('static', filename=f'img/club{img_num}.svg'), 
+                            image_url=f'/static/img/club{img_num}.svg', 
                             president_id=president.id
                         )
                         db.session.add(club)
