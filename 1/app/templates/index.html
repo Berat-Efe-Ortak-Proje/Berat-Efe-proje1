@@ -5,34 +5,11 @@
 {% block content %}
 <div class="jumbotron bg-light p-5 rounded">
     <div id="heroCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
-        <div class="carousel-indicators">
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="3" aria-label="Slide 4"></button>
-        </div>
         <div class="carousel-inner rounded">
             <div class="carousel-item active">
                 <img src="{{ url_for('static', filename='img/hero1.svg') }}" class="d-block w-100" alt="Kampüs Etkinlikleri">
             </div>
-            <div class="carousel-item">
-                <img src="{{ url_for('static', filename='img/hero2.svg') }}" class="d-block w-100" alt="Atölyeler">
-            </div>
-            <div class="carousel-item">
-                <img src="{{ url_for('static', filename='img/hero3.svg') }}" class="d-block w-100" alt="Turnuvalar">
-            </div>
-            <div class="carousel-item">
-                <img src="{{ url_for('static', filename='img/hero4.svg') }}" class="d-block w-100" alt="Sosyal Etkinlikler">
-            </div>
         </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Önceki</span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Sonraki</span>
-        </button>
     </div>
     <h1 class="display-4">Hoş Geldiniz!</h1>
     <p class="lead">Kulüp Yönetim Sistemine hoş geldiniz. Kulüpleri keşfedin ve etkinliklere katılın.</p>
