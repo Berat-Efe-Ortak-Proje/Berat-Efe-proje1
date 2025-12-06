@@ -82,7 +82,7 @@ def create_app():
                     clubs = [
                         Club(name='Teknoloji Kulübü', description='Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.', image_url=url_for('static', filename='img/club1.svg'), president_id=admin.id),
                         Club(name='Spor Kulübü', description='Farklı spor dallarında etkinlikler ve turnuvalar.', image_url=url_for('static', filename='img/club2.svg'), president_id=user1.id),
-                        Club(name='Sanat Kulübü', description='Resim, heykel ve atölye çalışmaları.', image_url=url_for('static', filename='img/club3.svg'), president_id=user2.id),
+                        Club(name='Sanat Kulübü', description='Resim ve heykel çalışmaları.', image_url=url_for('static', filename='img/club3.svg'), president_id=user2.id),
                         Club(name='Müzik Kulübü', description='Müzik pratikleri, konserler ve performanslar.', image_url=url_for('static', filename='img/club4.svg'), president_id=user3.id),
                         Club(name='Edebiyat Kulübü', description='Okuma grupları ve edebi etkinlikler.', image_url=url_for('static', filename='img/club5.svg'), president_id=user1.id),
                     ]
