@@ -35,7 +35,7 @@
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
                     {% if club.image_url %}
-                    <img src="{{ club.image_url }}" class="card-img-top" alt="{{ club.name }}">
+                    <img src="{{ club.image_url }}" class="card-img-top" alt="{{ club.name }}" style="height: 200px; object-fit: cover;">
                     {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ club.name }}</h5>
