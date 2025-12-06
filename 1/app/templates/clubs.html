@@ -14,22 +14,28 @@
     {% if clubs %}
         {% for club in clubs %}
             <div class="col-md-6 mb-4">
-                <div class="card h-100">
-                    {% if club.image_url %}
-                    <img src="{{ club.image_url }}" class="card-img-top" alt="{{ club.name }}" style="height: 250px; object-fit: cover;">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ club.name }}</h5>
-                        <p class="card-text">{{ club.description }}</p>
-                        <p class="card-text">
-                            <small class="text-muted">
-                                Oluşturulma: {{ club.created_at.strftime('%d.%m.%Y %H:%M') }}
-                                <br>
-                                Etkinlik Sayısı: {{ club.events|length }}
-                            </small>
-                        </p>
+                <div class="card h-100 p-3">
+                    <div class="row g-0 align-items-center">
+                        <div class="col-md-4 text-center">
+                            {% if club.image_url %}
+                            <img src="{{ club.image_url }}" class="img-fluid rounded-start" alt="{{ club.name }}" style="max-height: 150px; object-fit: contain;">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ club.name }}</h5>
+                                <p class="card-text">{{ club.description }}</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        Oluşturulma: {{ club.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                        <br>
+                                        Etkinlik Sayısı: {{ club.events|length }}
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-footer d-flex gap-2">
+                    <div class="card-footer bg-transparent border-top-0 d-flex gap-2 justify-content-end">
                         <a href="{{ url_for('club.view_club', club_id=club.id) }}" class="btn btn-sm btn-primary">Detayları Gör</a>
                         {% if current_user.is_authenticated and current_user.id == club.president_id %}
                             <a href="{{ url_for('event.create_event', club_id=club.id) }}" class="btn btn-sm btn-success">Etkinlik Oluştur</a>

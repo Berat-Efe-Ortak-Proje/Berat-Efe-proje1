@@ -4,6 +4,7 @@
 
 {% block content %}
 <div class="jumbotron bg-light p-5 rounded">
+    <img src="{{ url_for('static', filename='img/hero_banner.png') }}" class="img-fluid rounded mb-4 w-100" alt="Kulüp Yönetim Sistemi">
     <h1 class="display-2 fw-bold">Hoş Geldiniz!</h1>
     <p class="lead">Kulüp Yönetim Sistemine hoş geldiniz. Kulüpleri keşfedin ve etkinliklere katılın.</p>
     
@@ -33,9 +34,9 @@
     {% if clubs %}
         {% for club in clubs %}
             <div class="col-md-4 mb-4">
-                <div class="card h-100">
+                <div class="card h-100 text-center p-3">
                     {% if club.image_url %}
-                    <img src="{{ club.image_url }}" class="card-img-top" alt="{{ club.name }}" style="height: 200px; object-fit: cover;">
+                    <img src="{{ club.image_url }}" class="card-img-top mx-auto" alt="{{ club.name }}" style="height: 150px; width: auto; object-fit: contain;">
                     {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ club.name }}</h5>
