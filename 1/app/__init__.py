@@ -107,7 +107,23 @@ def create_app():
                         c.name = new_name
                         db.session.commit()
 
-                # 3. Ensure Clubs Exist (with new names) and Update Details
+                # 3. Remove unwanted clubs
+                clubs_to_remove = [
+                    'Dans Topluluğu',
+                    'Girişimcilik ve Kariyer Kulübü',
+                    'Doğa Sporları Kulübü'
+                ]
+                for name in clubs_to_remove:
+                    c = Club.query.filter_by(name=name).first()
+                    if c:
+                        # Delete associated events first (though cascade might handle it, explicit is safer here without cascade config)
+                        Event.query.filter_by(club_id=c.id).delete()
+                        # Clear members association
+                        c.members = []
+                        db.session.delete(c)
+                        db.session.commit()
+
+                # 4. Ensure Clubs Exist (with new names) and Update Details
                 club_data = [
                     ('Bilişim ve Teknoloji Kulübü', 'Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.', 'club1.svg'),
                     ('Spor ve Yaşam Kulübü', 'Farklı spor dallarında etkinlikler ve turnuvalar.', 'club2.svg'),
@@ -115,10 +131,7 @@ def create_app():
                     ('Müzik Topluluğu', 'Müzik pratikleri, konserler ve performanslar.', 'club4.svg'),
                     ('Edebiyat ve Kültür Kulübü', 'Okuma grupları ve edebi etkinlikler.', 'club5.svg'),
                     ('Sahne Sanatları Kulübü', 'Sahne sanatları ve oyunculuk atölyeleri.', 'club3.svg'),
-                    ('Fotoğrafçılık Topluluğu', 'Fotoğraf gezileri ve sergiler.', 'club3.svg'),
-                    ('Dans Topluluğu', 'Modern ve klasik dans eğitimleri.', 'club4.svg'),
-                    ('Girişimcilik ve Kariyer Kulübü', 'Startup fikirleri ve iş dünyası buluşmaları.', 'club1.svg'),
-                    ('Doğa Sporları Kulübü', 'Doğa yürüyüşleri ve kamp etkinlikleri.', 'club2.svg')
+                    ('Fotoğrafçılık Topluluğu', 'Fotoğraf gezileri ve sergiler.', 'club3.svg')
                 ]
 
                 for i, (name, desc, img_file) in enumerate(club_data):
