@@ -13,6 +13,15 @@
             <div class="card-body">
                 <h5 class="card-title">Üye Sayısı</h5>
                 <p class="card-text display-4">{{ club.members|length }}</p>
+                {% if current_user.is_authenticated %}
+                    {% if current_user in club.members %}
+                        <a href="{{ url_for('club.leave_club', club_id=club.id) }}" class="btn btn-outline-danger w-100">Kulüpten Ayrıl</a>
+                    {% else %}
+                        <a href="{{ url_for('club.join_club', club_id=club.id) }}" class="btn btn-primary w-100">Kulübe Üye Ol</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100">Üye Olmak İçin Giriş Yap</a>
+                {% endif %}
             </div>
         </div>
     </div>

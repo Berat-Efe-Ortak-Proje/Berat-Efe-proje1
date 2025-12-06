@@ -98,6 +98,32 @@ def create_club():
 @club_bp.route('/club/<int:club_id>')
 def view_club(club_id):
     club = Club.query.get_or_404(club_id)
+    events = club.events
+    return render_template('club_detail.html', club=club, events=events)
+
+@club_bp.route('/club/<int:club_id>/join')
+@login_required
+def join_club(club_id):
+    club = Club.query.get_or_404(club_id)
+    if current_user not in club.members:
+        club.members.append(current_user)
+        db.session.commit()
+        flash(f'{club.name} kulübüne başarıyla katıldınız!', 'success')
+    else:
+        flash(f'Zaten {club.name} kulübünün üyesisiniz.', 'info')
+    return redirect(url_for('club.view_club', club_id=club_id))
+
+@club_bp.route('/club/<int:club_id>/leave')
+@login_required
+def leave_club(club_id):
+    club = Club.query.get_or_404(club_id)
+    if current_user in club.members:
+        club.members.remove(current_user)
+        db.session.commit()
+        flash(f'{club.name} kulübünden ayrıldınız.', 'warning')
+    else:
+        flash(f'{club.name} kulübünün üyesi değilsiniz.', 'info')
+    return redirect(url_for('club.view_club', club_id=club_id))
     events = Event.query.filter_by(club_id=club_id).all()
     return render_template('club_detail.html', club=club, events=events)
 
