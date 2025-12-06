@@ -6,6 +6,17 @@
 <div class="jumbotron bg-light p-5 rounded">
     <h1 class="display-2 fw-bold">Hoş Geldiniz!</h1>
     <p class="lead">Kulüp Yönetim Sistemine hoş geldiniz. Kulüpleri keşfedin ve etkinliklere katılın.</p>
+    
+    <div class="mt-4 mb-4">
+        <ul class="list-unstyled fs-5">
+            <li class="mb-2">🎓 Kulüp üyeleri kolayca kayıt olabilir, profil oluşturabilir.</li>
+            <li class="mb-2">📅 Etkinlikler tek tıkla duyurulur, katılımlar takip edilir.</li>
+            <li class="mb-2">🗂️ Yöneticiler kulüp içi rolleri düzenleyebilir.</li>
+            <li class="mb-2">📢 Duyurular herkes tarafından hızlıca görüntülenir.</li>
+            <li class="mb-2">🤝 Kulüp içi iletişim güçlenir ve süreçler daha şeffaf hale gelir.</li>
+        </ul>
+    </div>
+
     <hr class="my-4">
     {% if not current_user.is_authenticated %}
         <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}" role="button">Giriş Yap</a>
