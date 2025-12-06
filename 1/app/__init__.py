@@ -87,18 +87,38 @@ def create_app():
                 # Refresh users list with actual DB objects
                 all_users = User.query.all()
 
-                # 2. Ensure Clubs Exist
+                # 2. Rename existing clubs to more professional names if needed
+                renames = {
+                    'Teknoloji Kulübü': 'Bilişim ve Teknoloji Kulübü',
+                    'Spor Kulübü': 'Spor ve Yaşam Kulübü',
+                    'Sanat Kulübü': 'Güzel Sanatlar Kulübü',
+                    'Müzik Kulübü': 'Müzik Topluluğu',
+                    'Edebiyat Kulübü': 'Edebiyat ve Kültür Kulübü',
+                    'Tiyatro Kulübü': 'Sahne Sanatları Kulübü',
+                    'Fotoğrafçılık Kulübü': 'Fotoğrafçılık Topluluğu',
+                    'Dans Kulübü': 'Dans Topluluğu',
+                    'Girişimcilik Kulübü': 'Girişimcilik ve Kariyer Kulübü',
+                    'Doğa ve Gezi Kulübü': 'Doğa Sporları Kulübü'
+                }
+                
+                for old_name, new_name in renames.items():
+                    c = Club.query.filter_by(name=old_name).first()
+                    if c:
+                        c.name = new_name
+                        db.session.commit()
+
+                # 3. Ensure Clubs Exist (with new names)
                 club_data = [
-                    ('Teknoloji Kulübü', 'Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.'),
-                    ('Spor Kulübü', 'Farklı spor dallarında etkinlikler ve turnuvalar.'),
-                    ('Sanat Kulübü', 'Resim ve heykel çalışmaları.'),
-                    ('Müzik Kulübü', 'Müzik pratikleri, konserler ve performanslar.'),
-                    ('Edebiyat Kulübü', 'Okuma grupları ve edebi etkinlikler.'),
-                    ('Tiyatro Kulübü', 'Sahne sanatları ve oyunculuk atölyeleri.'),
-                    ('Fotoğrafçılık Kulübü', 'Fotoğraf gezileri ve sergiler.'),
-                    ('Dans Kulübü', 'Modern ve klasik dans eğitimleri.'),
-                    ('Girişimcilik Kulübü', 'Startup fikirleri ve iş dünyası buluşmaları.'),
-                    ('Doğa ve Gezi Kulübü', 'Doğa yürüyüşleri ve kamp etkinlikleri.')
+                    ('Bilişim ve Teknoloji Kulübü', 'Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.'),
+                    ('Spor ve Yaşam Kulübü', 'Farklı spor dallarında etkinlikler ve turnuvalar.'),
+                    ('Güzel Sanatlar Kulübü', 'Resim ve heykel çalışmaları.'),
+                    ('Müzik Topluluğu', 'Müzik pratikleri, konserler ve performanslar.'),
+                    ('Edebiyat ve Kültür Kulübü', 'Okuma grupları ve edebi etkinlikler.'),
+                    ('Sahne Sanatları Kulübü', 'Sahne sanatları ve oyunculuk atölyeleri.'),
+                    ('Fotoğrafçılık Topluluğu', 'Fotoğraf gezileri ve sergiler.'),
+                    ('Dans Topluluğu', 'Modern ve klasik dans eğitimleri.'),
+                    ('Girişimcilik ve Kariyer Kulübü', 'Startup fikirleri ve iş dünyası buluşmaları.'),
+                    ('Doğa Sporları Kulübü', 'Doğa yürüyüşleri ve kamp etkinlikleri.')
                 ]
 
                 for i, (name, desc) in enumerate(club_data):
