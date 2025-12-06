@@ -78,6 +78,10 @@ def list_clubs():
 @club_bp.route('/club/create', methods=['GET', 'POST'])
 @login_required
 def create_club():
+    if current_user.role != 'admin':
+        flash('Bu işlem için yönetici yetkisi gerekiyor.', 'danger')
+        return redirect(url_for('club.list_clubs'))
+
     if request.method == 'POST':
         name = request.form.get('name')
         description = request.form.get('description')
@@ -101,6 +105,10 @@ def view_club(club_id):
 @event_bp.route('/event/create/<int:club_id>', methods=['GET', 'POST'])
 @login_required
 def create_event(club_id):
+    if current_user.role != 'admin':
+        flash('Bu işlem için yönetici yetkisi gerekiyor.', 'danger')
+        return redirect(url_for('club.view_club', club_id=club_id))
+
     club = Club.query.get_or_404(club_id)
     
     if request.method == 'POST':

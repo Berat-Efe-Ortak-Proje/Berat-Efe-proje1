@@ -16,7 +16,7 @@
     <hr class="my-4">
     {% if not current_user.is_authenticated %}
         <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}" role="button">Giriş Yap</a>
-        <a class="btn btn-success btn-lg" href="{{ url_for('auth.register') }}" role="button">Kayıt Ol</a>
+        <a class="btn btn-success btn-lg" href="{{ url_for('auth.register') }}" role="button">Üye Ol</a>
     {% else %}
         <a class="btn btn-primary btn-lg" href="{{ url_for('club.list_clubs') }}" role="button">Kulüpleri Gör</a>
     {% endif %}
