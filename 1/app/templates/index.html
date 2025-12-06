@@ -23,6 +23,9 @@
         {% for club in clubs %}
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
+                    {% if club.image_url %}
+                    <img src="{{ club.image_url }}" class="card-img-top" alt="{{ club.name }}">
+                    {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ club.name }}</h5>
                         <p class="card-text">{{ club.description[:100] }}...</p>

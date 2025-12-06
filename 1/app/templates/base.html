@@ -19,6 +19,12 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('club.list_clubs') }}">Kulüpler</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.about') }}">Hakkımızda</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.contact') }}">İletişim</a>
+                    </li>
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('club.create_club') }}">Kulüp Oluştur</a>

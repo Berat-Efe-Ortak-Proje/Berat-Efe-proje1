@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
@@ -46,6 +46,59 @@ def create_app():
             app.register_blueprint(main_bp)
             
             db.create_all()
+            # Seed sample data if DB is empty
+            try:
+                from .models import User, Club, Event
+                # If there are no clubs, create sample users, clubs and events
+                if Club.query.count() == 0:
+                    import datetime
+
+                    admin = User(username='admin', email='admin@example.com', role='admin')
+                    admin.set_password('adminpass')
+
+                    user1 = User(username='alice', email='alice@example.com')
+                    user1.set_password('password1')
+                    user2 = User(username='berat', email='berat@example.com')
+                    user2.set_password('password2')
+                    user3 = User(username='efe', email='efe@example.com')
+                    user3.set_password('password3')
+
+                    db.session.add_all([admin, user1, user2, user3])
+                    db.session.commit()
+
+                    # Create clubs with image urls pointing to static images
+                    clubs = [
+                        Club(name='Teknoloji Kulübü', description='Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.', image_url=url_for('static', filename='img/club1.svg'), president_id=admin.id),
+                        Club(name='Spor Kulübü', description='Farklı spor dallarında etkinlikler ve turnuvalar.', image_url=url_for('static', filename='img/club2.svg'), president_id=user1.id),
+                        Club(name='Sanat Kulübü', description='Resim, heykel ve atölye çalışmaları.', image_url=url_for('static', filename='img/club3.svg'), president_id=user2.id),
+                        Club(name='Müzik Kulübü', description='Müzik pratikleri, konserler ve performanslar.', image_url=url_for('static', filename='img/club4.svg'), president_id=user3.id),
+                        Club(name='Edebiyat Kulübü', description='Okuma grupları ve edebi etkinlikler.', image_url=url_for('static', filename='img/club5.svg'), president_id=user1.id),
+                    ]
+                    db.session.add_all(clubs)
+                    db.session.commit()
+
+                    # Helper to create events
+                    def make_event(club, name, days_offset):
+                        ev = Event(name=name, description=f'{name} açıklaması', date=datetime.datetime.now() + datetime.timedelta(days=days_offset), location='Kampüs Binası', club_id=club.id, image_url=club.image_url)
+                        db.session.add(ev)
+                        return ev
+
+                    events = []
+                    for idx, c in enumerate(Club.query.all(), start=1):
+                        ev = make_event(c, f'{c.name} - İlk Etkinlik', idx * 7)
+                        events.append(ev)
+
+                    db.session.commit()
+                    # Add members to clubs
+                    all_users = User.query.filter(User.username.in_(['admin','alice','berat','efe'])).all()
+                    for c in Club.query.all():
+                        for u in all_users[:3]:
+                            c.members.append(u)
+                    db.session.commit()
+            except Exception:
+                # Seeding should not break app init on errors
+                import traceback
+                traceback.print_exc()
         except Exception as e:
             print(f"Error during app initialization: {e}")
             import traceback

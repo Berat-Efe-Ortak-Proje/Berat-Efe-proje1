@@ -20,6 +20,7 @@ class Club(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text)
+    image_url = db.Column(db.String(255))
     president_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=db.func.now())
     
@@ -34,6 +35,7 @@ class Event(db.Model):
     location = db.Column(db.String(200))
     club_id = db.Column(db.Integer, db.ForeignKey('club.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.now())
+    image_url = db.Column(db.String(255))
     
     attendees = db.relationship('User', secondary='event_attendees', backref='events')
 

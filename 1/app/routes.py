@@ -59,6 +59,16 @@ def index():
     clubs = Club.query.all()
     return render_template('index.html', clubs=clubs)
 
+
+@main_bp.route('/about')
+def about():
+    return render_template('about.html')
+
+
+@main_bp.route('/contact')
+def contact():
+    return render_template('contact.html')
+
 # Club Routes
 @club_bp.route('/clubs')
 def list_clubs():
