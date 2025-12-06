@@ -107,32 +107,36 @@ def create_app():
                         c.name = new_name
                         db.session.commit()
 
-                # 3. Ensure Clubs Exist (with new names)
+                # 3. Ensure Clubs Exist (with new names) and Update Details
                 club_data = [
-                    ('Bilişim ve Teknoloji Kulübü', 'Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.'),
-                    ('Spor ve Yaşam Kulübü', 'Farklı spor dallarında etkinlikler ve turnuvalar.'),
-                    ('Güzel Sanatlar Kulübü', 'Resim ve heykel çalışmaları.'),
-                    ('Müzik Topluluğu', 'Müzik pratikleri, konserler ve performanslar.'),
-                    ('Edebiyat ve Kültür Kulübü', 'Okuma grupları ve edebi etkinlikler.'),
-                    ('Sahne Sanatları Kulübü', 'Sahne sanatları ve oyunculuk atölyeleri.'),
-                    ('Fotoğrafçılık Topluluğu', 'Fotoğraf gezileri ve sergiler.'),
-                    ('Dans Topluluğu', 'Modern ve klasik dans eğitimleri.'),
-                    ('Girişimcilik ve Kariyer Kulübü', 'Startup fikirleri ve iş dünyası buluşmaları.'),
-                    ('Doğa Sporları Kulübü', 'Doğa yürüyüşleri ve kamp etkinlikleri.')
+                    ('Bilişim ve Teknoloji Kulübü', 'Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.', 'club1.svg'),
+                    ('Spor ve Yaşam Kulübü', 'Farklı spor dallarında etkinlikler ve turnuvalar.', 'club2.svg'),
+                    ('Güzel Sanatlar Kulübü', 'Resim ve heykel çalışmaları.', 'club3.svg'),
+                    ('Müzik Topluluğu', 'Müzik pratikleri, konserler ve performanslar.', 'club4.svg'),
+                    ('Edebiyat ve Kültür Kulübü', 'Okuma grupları ve edebi etkinlikler.', 'club5.svg'),
+                    ('Sahne Sanatları Kulübü', 'Sahne sanatları ve oyunculuk atölyeleri.', 'club3.svg'),
+                    ('Fotoğrafçılık Topluluğu', 'Fotoğraf gezileri ve sergiler.', 'club3.svg'),
+                    ('Dans Topluluğu', 'Modern ve klasik dans eğitimleri.', 'club4.svg'),
+                    ('Girişimcilik ve Kariyer Kulübü', 'Startup fikirleri ve iş dünyası buluşmaları.', 'club1.svg'),
+                    ('Doğa Sporları Kulübü', 'Doğa yürüyüşleri ve kamp etkinlikleri.', 'club2.svg')
                 ]
 
-                for i, (name, desc) in enumerate(club_data):
+                for i, (name, desc, img_file) in enumerate(club_data):
                     club = Club.query.filter_by(name=name).first()
-                    if not club:
-                        # Cycle through available images 1-5
-                        img_num = (i % 5) + 1
+                    if club:
+                        # Update existing club details
+                        club.description = desc
+                        club.image_url = f'/static/img/{img_file}'
+                        db.session.commit()
+                    else:
+                        # Create new club
                         # Pick a random president from users (excluding admin if desired, or just random)
                         president = all_users[i % len(all_users)]
                         
                         club = Club(
                             name=name, 
                             description=desc, 
-                            image_url=f'/static/img/club{img_num}.svg', 
+                            image_url=f'/static/img/{img_file}', 
                             president_id=president.id
                         )
                         db.session.add(club)
