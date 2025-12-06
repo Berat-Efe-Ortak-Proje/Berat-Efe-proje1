@@ -126,12 +126,12 @@ def create_app():
 
                 # 4. Ensure Clubs Exist (with new names) and Update Details
                 club_data = [
-                    ('Bilişim ve Teknoloji Kulübü', 'Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.', 'club1.svg'),
-                    ('Spor ve Yaşam Kulübü', 'Farklı spor dallarında etkinlikler ve turnuvalar.', 'club2.svg'),
-                    ('Güzel Sanatlar Kulübü', 'Resim ve heykel çalışmaları.', 'club3.svg'),
-                    ('Müzik Topluluğu', 'Müzik pratikleri, konserler ve performanslar.', 'club4.svg'),
-                    ('Edebiyat ve Kültür Kulübü', 'Okuma grupları ve edebi etkinlikler.', 'club5.svg'),
-                    ('Sahne Sanatları Kulübü', 'Sahne sanatları ve oyunculuk atölyeleri.', 'club3.svg')
+                    ('Bilişim ve Teknoloji Kulübü', 'Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.', 'teknoloji.png'),
+                    ('Spor ve Yaşam Kulübü', 'Farklı spor dallarında etkinlikler ve turnuvalar.', 'spor.png'),
+                    ('Güzel Sanatlar Kulübü', 'Resim ve heykel çalışmaları.', 'sanat.png'),
+                    ('Müzik Topluluğu', 'Müzik pratikleri, konserler ve performanslar.', 'muzik.png'),
+                    ('Edebiyat ve Kültür Kulübü', 'Okuma grupları ve edebi etkinlikler.', 'edebiyat.png'),
+                    ('Sahne Sanatları Kulübü', 'Sahne sanatları ve oyunculuk atölyeleri.', 'tiyatro.png')
                 ]
 
                 for i, (name, desc, img_file) in enumerate(club_data):
