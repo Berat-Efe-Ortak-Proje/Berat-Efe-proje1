@@ -1,5 +1,6 @@
 import os
 from flask import Flask, url_for
+from sqlalchemy import text, inspect
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
@@ -46,6 +47,17 @@ def create_app():
             app.register_blueprint(main_bp)
             
             db.create_all()
+            # Ensure new columns exist on existing DB (simple ALTER for SQLite)
+            try:
+                inspector = inspect(db.engine)
+                cols = [c['name'] for c in inspector.get_columns('club')]
+                if 'image_url' not in cols:
+                    with db.engine.begin() as conn:
+                        conn.execute(text("ALTER TABLE club ADD COLUMN image_url VARCHAR(255)"))
+            except Exception:
+                # If introspection or ALTER fails, continue quietly — seeding will handle missing columns
+                import traceback
+                traceback.print_exc()
             # Seed sample data if DB is empty
             try:
                 from .models import User, Club, Event
