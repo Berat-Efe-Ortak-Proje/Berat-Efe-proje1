@@ -70,7 +70,7 @@ def create_app():
                     admin = User(username='admin', email='admin@example.com', role='admin')
                     admin.set_password('adminpass')
                     db.session.add(admin)
-                    db.session.commit() # Commit to get ID
+                    db.session.commit()
 
                 users = [admin]
                 user_names = ['alice', 'berat', 'efe', 'mehmet', 'ayse', 'fatma', 'ali', 'veli', 'zeynep', 'can']
@@ -84,80 +84,55 @@ def create_app():
                     users.append(u)
                 db.session.commit()
                 
-                # Refresh users list with actual DB objects
                 all_users = User.query.all()
 
-                # 2. Rename existing clubs to more professional names if needed
-                renames = {
-                    'Teknoloji Kulübü': 'Bilişim ve Teknoloji Kulübü',
-                    'Spor Kulübü': 'Spor ve Yaşam Kulübü',
-                    'Sanat Kulübü': 'Güzel Sanatlar Kulübü',
-                    'Müzik Kulübü': 'Müzik Topluluğu',
-                    'Edebiyat Kulübü': 'Edebiyat ve Kültür Kulübü',
-                    'Tiyatro Kulübü': 'Sahne Sanatları Kulübü',
-                    'Fotoğrafçılık Kulübü': 'Fotoğrafçılık Topluluğu',
-                    'Dans Kulübü': 'Dans Topluluğu',
-                    'Girişimcilik Kulübü': 'Girişimcilik ve Kariyer Kulübü',
-                    'Doğa ve Gezi Kulübü': 'Doğa Sporları Kulübü'
-                }
+                # 2. Sync Clubs (Create needed, Update existing, Delete unwanted)
+                target_clubs = [
+                    {'name': 'Bilişim ve Teknoloji Kulübü', 'desc': 'Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.', 'img': 'teknoloji.jpg'},
+                    {'name': 'Spor ve Yaşam Kulübü', 'desc': 'Farklı spor dallarında etkinlikler ve turnuvalar.', 'img': 'spor.jpg'},
+                    {'name': 'Güzel Sanatlar Kulübü', 'desc': 'Resim ve heykel çalışmaları.', 'img': 'sanat.jpg'},
+                    {'name': 'Müzik Topluluğu', 'desc': 'Müzik pratikleri, konserler ve performanslar.', 'img': 'muzik.jpg'},
+                    {'name': 'Edebiyat ve Kültür Kulübü', 'desc': 'Okuma grupları ve edebi etkinlikler.', 'img': 'edebiyat.jpg'},
+                    {'name': 'Sahne Sanatları Kulübü', 'desc': 'Sahne sanatları ve oyunculuk atölyeleri.', 'img': 'tiyatro.jpg'}
+                ]
                 
-                for old_name, new_name in renames.items():
-                    c = Club.query.filter_by(name=old_name).first()
-                    if c:
-                        c.name = new_name
-                        db.session.commit()
-
-                # 3. Remove unwanted clubs
-                clubs_to_remove = [
-                    'Dans Topluluğu',
-                    'Girişimcilik ve Kariyer Kulübü',
-                    'Doğa Sporları Kulübü',
-                    'Fotoğrafçılık Topluluğu'
-                ]
-                for name in clubs_to_remove:
-                    c = Club.query.filter_by(name=name).first()
-                    if c:
-                        # Delete associated events first (though cascade might handle it, explicit is safer here without cascade config)
-                        Event.query.filter_by(club_id=c.id).delete()
-                        # Clear members association
-                        c.members = []
-                        db.session.delete(c)
-                        db.session.commit()
-
-                # 4. Ensure Clubs Exist (with new names) and Update Details
-                club_data = [
-                    ('Bilişim ve Teknoloji Kulübü', 'Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.', 'teknoloji.jpg'),
-                    ('Spor ve Yaşam Kulübü', 'Farklı spor dallarında etkinlikler ve turnuvalar.', 'spor.jpg'),
-                    ('Güzel Sanatlar Kulübü', 'Resim ve heykel çalışmaları.', 'sanat.jpg'),
-                    ('Müzik Topluluğu', 'Müzik pratikleri, konserler ve performanslar.', 'muzik.jpg'),
-                    ('Edebiyat ve Kültür Kulübü', 'Okuma grupları ve edebi etkinlikler.', 'edebiyat.jpg'),
-                    ('Sahne Sanatları Kulübü', 'Sahne sanatları ve oyunculuk atölyeleri.', 'tiyatro.jpg')
-                ]
-
-                for i, (name, desc, img_file) in enumerate(club_data):
-                    club = Club.query.filter_by(name=name).first()
+                target_names = [c['name'] for c in target_clubs]
+                
+                # Delete clubs not in target list
+                existing_clubs = Club.query.all()
+                for club in existing_clubs:
+                    if club.name not in target_names:
+                        Event.query.filter_by(club_id=club.id).delete()
+                        club.members = []
+                        db.session.delete(club)
+                db.session.commit()
+                
+                # Create or Update target clubs
+                for data in target_clubs:
+                    club = Club.query.filter_by(name=data['name']).first()
+                    image_path = f'/static/img/{data["img"]}'
+                    
                     if club:
-                        # Update existing club details
-                        club.description = desc
-                        club.image_url = f'/static/img/{img_file}'
-                        db.session.commit()
+                        club.description = data['desc']
+                        club.image_url = image_path
                     else:
-                        # Create new club
-                        # Pick a random president from users (excluding admin if desired, or just random)
-                        president = all_users[i % len(all_users)]
-                        
+                        president = random.choice(all_users)
                         club = Club(
-                            name=name, 
-                            description=desc, 
-                            image_url=f'/static/img/{img_file}', 
+                            name=data['name'],
+                            description=data['desc'],
+                            image_url=image_path,
                             president_id=president.id
                         )
                         db.session.add(club)
-                        db.session.commit() # Commit to get ID for events
+                    db.session.commit()
 
-                        # Create Events for this new club
+                # 3. Ensure Events and Members Exist
+                clubs = Club.query.all()
+                for club in clubs:
+                    # Ensure at least 1 event
+                    if not club.events:
                         for j in range(random.randint(1, 2)):
-                            days_offset = (i + 1) * 3 + (j * 5)
+                            days_offset = random.randint(5, 30)
                             ev = Event(
                                 name=f'{club.name} Etkinliği {j+1}', 
                                 description=f'{club.name} tarafından düzenlenen harika bir etkinlik.', 
@@ -167,18 +142,18 @@ def create_app():
                                 image_url=club.image_url
                             )
                             db.session.add(ev)
-                        
-                        # Add random members
+                    
+                    # Ensure some members
+                    if not club.members:
                         potential_members = [u for u in all_users if u.id != club.president_id]
                         if potential_members:
                             members_to_add = random.sample(potential_members, k=min(len(potential_members), random.randint(3, 6)))
                             for m in members_to_add:
                                 club.members.append(m)
-                        
-                        db.session.commit()
+                    
+                    db.session.commit()
 
             except Exception:
-                # Seeding should not break app init on errors
                 import traceback
                 traceback.print_exc()
         except Exception as e:
