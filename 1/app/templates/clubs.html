@@ -40,6 +40,11 @@
                         {% if current_user.is_authenticated and current_user.id == club.president_id %}
                             <a href="{{ url_for('event.create_event', club_id=club.id) }}" class="btn btn-sm btn-success">Etkinlik Oluştur</a>
                         {% endif %}
+                        {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                            <form action="{{ url_for('club.delete_club', club_id=club.id) }}" method="POST" onsubmit="return confirm('Bu kulübü silmek istediğinizden emin misiniz?');" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-danger">Sil</button>
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -124,6 +124,24 @@ def leave_club(club_id):
     else:
         flash(f'{club.name} kulübünün üyesi değilsiniz.', 'info')
     return redirect(url_for('club.view_club', club_id=club_id))
+
+@club_bp.route('/club/<int:club_id>/delete', methods=['POST'])
+@login_required
+def delete_club(club_id):
+    if current_user.role != 'admin':
+        flash('Bu işlem için yönetici yetkisi gerekiyor.', 'danger')
+        return redirect(url_for('club.list_clubs'))
+    
+    club = Club.query.get_or_404(club_id)
+    
+    # Delete associated events first
+    for event in club.events:
+        db.session.delete(event)
+        
+    db.session.delete(club)
+    db.session.commit()
+    flash('Kulüp başarıyla silindi.', 'success')
+    return redirect(url_for('club.list_clubs'))
     events = Event.query.filter_by(club_id=club_id).all()
     return render_template('club_detail.html', club=club, events=events)
 

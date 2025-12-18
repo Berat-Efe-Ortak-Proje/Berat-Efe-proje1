@@ -1,0 +1,1133 @@
+PROJE KODLARI
+==================================================
+
+==================================================
+DOSYA: .\check_images.py
+==================================================
+
+from app import create_app, db
+from app.models import Club
+
+app = create_app()
+with app.app_context():
+    clubs = Club.query.all()
+    print(f"Total clubs: {len(clubs)}")
+    for c in clubs:
+        print(f"- {c.name}: {c.image_url}")
+
+
+==================================================
+DOSYA: .\inspect_db.py
+==================================================
+
+import sqlite3
+import os
+
+# Path to the database
+db_path = os.path.join('instance', 'club_management.db')
+
+if not os.path.exists(db_path):
+    print(f"Database not found at {db_path}")
+    exit()
+
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
+
+def print_table(table_name, columns_to_show=None):
+    print(f"\n--- {table_name.upper()} ---")
+    try:
+        cursor.execute(f"SELECT * FROM {table_name}")
+        all_columns = [description[0] for description in cursor.description]
+        rows = cursor.fetchall()
+        
+        if not rows:
+            print("No data found.")
+            return
+
+        # Filter columns if specified
+        if columns_to_show:
+            indices = [all_columns.index(c) for c in columns_to_show if c in all_columns]
+            display_columns = [all_columns[i] for i in indices]
+        else:
+            indices = range(len(all_columns))
+            display_columns = all_columns
+
+        # Calculate column widths
+        widths = [len(c) for c in display_columns]
+        formatted_rows = []
+        for row in rows:
+            formatted_row = []
+            for i, idx in enumerate(indices):
+                val = str(row[idx])
+                # Truncate long text
+                if len(val) > 30:
+                    val = val[:27] + "..."
+                formatted_row.append(val)
+                widths[i] = max(widths[i], len(val))
+            formatted_rows.append(formatted_row)
+        
+        # Print header
+        header = " | ".join(f"{col:<{widths[i]}}" for i, col in enumerate(display_columns))
+        print(header)
+        print("-" * len(header))
+        
+        # Print rows
+        for row in formatted_rows:
+            print(" | ".join(f"{val:<{widths[i]}}" for i, val in enumerate(row)))
+            
+    except sqlite3.OperationalError as e:
+        print(f"Error reading table {table_name}: {e}")
+
+print("Reading database content...")
+
+# Users: Show id, username, email, role
+print_table('user', ['id', 'username', 'email', 'role'])
+
+# Clubs: Show id, name, description
+print_table('club', ['id', 'name', 'description'])
+
+# Events: Show id, name, date, location
+print_table('event', ['id', 'name', 'date', 'location'])
+
+conn.close()
+
+
+==================================================
+DOSYA: .\requirements.txt
+==================================================
+
+Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-WTF==1.2.1
+WTForms==3.1.1
+SQLAlchemy>=2.0.20,<2.1
+Werkzeug>=2.3.0
+python-dotenv==1.0.0
+gunicorn==21.2.0
+
+
+==================================================
+DOSYA: .\run.py
+==================================================
+
+import os
+from app import create_app
+
+app = create_app()
+
+if __name__ == '__main__':
+    # Render ve diğer platformlar için port çevresel değişkenden alın
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    app.run(host='0.0.0.0', port=port, debug=debug)
+
+
+==================================================
+DOSYA: .\verify_clubs.py
+==================================================
+
+from app import create_app, db
+from app.models import Club
+
+app = create_app()
+with app.app_context():
+    clubs = Club.query.all()
+    print(f"Total clubs: {len(clubs)}")
+    for c in clubs:
+        print(f"- {c.name}")
+
+
+==================================================
+DOSYA: .\__init__.py
+==================================================
+
+# This file makes the 1 directory a Python package
+
+
+==================================================
+DOSYA: .\app\models.py
+==================================================
+
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from . import db, login_manager
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), default='member')  # admin, manager, member
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+class Club(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text)
+    image_url = db.Column(db.String(255))
+    president_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    
+    members = db.relationship('User', secondary='club_members', backref='clubs')
+    events = db.relationship('Event', backref='club', lazy=True)
+
+class Event(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text)
+    date = db.Column(db.DateTime, nullable=False)
+    location = db.Column(db.String(200))
+    club_id = db.Column(db.Integer, db.ForeignKey('club.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    image_url = db.Column(db.String(255))
+    
+    attendees = db.relationship('User', secondary='event_attendees', backref='events')
+
+club_members = db.Table('club_members',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('club_id', db.Integer, db.ForeignKey('club.id'), primary_key=True)
+)
+
+event_attendees = db.Table('event_attendees',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('event_id', db.Integer, db.ForeignKey('event.id'), primary_key=True)
+)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+==================================================
+DOSYA: .\app\routes.py
+==================================================
+
+from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask_login import login_user, logout_user, current_user, login_required
+from . import db
+from .models import User, Club, Event
+
+# Blueprints
+auth_bp = Blueprint('auth', __name__)
+club_bp = Blueprint('club', __name__)
+event_bp = Blueprint('event', __name__)
+main_bp = Blueprint('main', __name__)
+
+# Auth Routes
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        if User.query.filter_by(username=username).first():
+            flash('Kullanıcı adı zaten kullanılıyor', 'danger')
+            return redirect(url_for('auth.register'))
+        
+        user = User(username=username, email=email)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        
+        flash('Kayıt başarılı! Giriş yapabilirsiniz.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    return render_template('register.html')
+
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        user = User.query.filter_by(username=username).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            return redirect(url_for('main.index'))
+        
+        flash('Kullanıcı adı veya şifre hatalı', 'danger')
+    
+    return render_template('login.html')
+
+@auth_bp.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('main.index'))
+
+# Main Routes
+@main_bp.route('/')
+def index():
+    clubs = Club.query.all()
+    return render_template('index.html', clubs=clubs)
+
+
+@main_bp.route('/about')
+def about():
+    return render_template('about.html')
+
+
+@main_bp.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+# Club Routes
+@club_bp.route('/clubs')
+def list_clubs():
+    clubs = Club.query.all()
+    return render_template('clubs.html', clubs=clubs)
+
+@club_bp.route('/club/create', methods=['GET', 'POST'])
+@login_required
+def create_club():
+    if current_user.role != 'admin':
+        flash('Bu işlem için yönetici yetkisi gerekiyor.', 'danger')
+        return redirect(url_for('club.list_clubs'))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        
+        club = Club(name=name, description=description, president_id=current_user.id)
+        db.session.add(club)
+        db.session.commit()
+        
+        flash('Kulüp başarıyla oluşturuldu!', 'success')
+        return redirect(url_for('club.list_clubs'))
+    
+    return render_template('create_club.html')
+
+@club_bp.route('/club/<int:club_id>')
+def view_club(club_id):
+    club = Club.query.get_or_404(club_id)
+    events = club.events
+    return render_template('club_detail.html', club=club, events=events)
+
+@club_bp.route('/club/<int:club_id>/join')
+@login_required
+def join_club(club_id):
+    club = Club.query.get_or_404(club_id)
+    if current_user not in club.members:
+        club.members.append(current_user)
+        db.session.commit()
+        flash(f'{club.name} kulübüne başarıyla katıldınız!', 'success')
+    else:
+        flash(f'Zaten {club.name} kulübünün üyesisiniz.', 'info')
+    return redirect(url_for('club.view_club', club_id=club_id))
+
+@club_bp.route('/club/<int:club_id>/leave')
+@login_required
+def leave_club(club_id):
+    club = Club.query.get_or_404(club_id)
+    if current_user in club.members:
+        club.members.remove(current_user)
+        db.session.commit()
+        flash(f'{club.name} kulübünden ayrıldınız.', 'warning')
+    else:
+        flash(f'{club.name} kulübünün üyesi değilsiniz.', 'info')
+    return redirect(url_for('club.view_club', club_id=club_id))
+    events = Event.query.filter_by(club_id=club_id).all()
+    return render_template('club_detail.html', club=club, events=events)
+
+# Event Routes
+@event_bp.route('/event/create/<int:club_id>', methods=['GET', 'POST'])
+@login_required
+def create_event(club_id):
+    if current_user.role != 'admin':
+        flash('Bu işlem için yönetici yetkisi gerekiyor.', 'danger')
+        return redirect(url_for('club.view_club', club_id=club_id))
+
+    club = Club.query.get_or_404(club_id)
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        date = request.form.get('date')
+        location = request.form.get('location')
+        
+        event = Event(name=name, description=description, date=date, 
+                     location=location, club_id=club_id)
+        db.session.add(event)
+        db.session.commit()
+        
+        flash('Etkinlik başarıyla oluşturuldu!', 'success')
+        return redirect(url_for('club.view_club', club_id=club_id))
+    
+    return render_template('create_event.html', club=club)
+
+@event_bp.route('/event/<int:event_id>')
+def view_event(event_id):
+    event = Event.query.get_or_404(event_id)
+    return render_template('event_detail.html', event=event)
+
+
+==================================================
+DOSYA: .\app\__init__.py
+==================================================
+
+import os
+from flask import Flask, url_for
+from sqlalchemy import text, inspect
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+
+db = SQLAlchemy()
+login_manager = LoginManager()
+
+def create_app():
+    # instance_relative_config=True allows using the instance folder for DB
+    app = Flask(__name__, instance_relative_config=True)
+
+    # Default configs
+    app.config.from_mapping(
+        SECRET_KEY=os.environ.get('SECRET_KEY', 'dev-key-change-in-production'),
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    )
+
+    # DATABASE_URL can be provided by Render (Postgres) or left empty for SQLite
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    else:
+        # Ensure instance folder exists and use it for the SQLite DB file
+        try:
+            os.makedirs(app.instance_path, exist_ok=True)
+        except Exception:
+            pass
+        db_path = os.path.join(app.instance_path, 'club_management.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
+    db.init_app(app)
+    login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+    
+    with app.app_context():
+        try:
+            from . import models
+            from .routes import auth_bp, club_bp, event_bp, main_bp
+            
+            app.register_blueprint(auth_bp, url_prefix='/auth')
+            app.register_blueprint(club_bp, url_prefix='/club')
+            app.register_blueprint(event_bp, url_prefix='/event')
+            app.register_blueprint(main_bp)
+            
+            db.create_all()
+            # Ensure new columns exist on existing DB (simple ALTER for SQLite)
+            try:
+                inspector = inspect(db.engine)
+                cols = [c['name'] for c in inspector.get_columns('club')]
+                if 'image_url' not in cols:
+                    with db.engine.begin() as conn:
+                        conn.execute(text("ALTER TABLE club ADD COLUMN image_url VARCHAR(255)"))
+            except Exception:
+                # If introspection or ALTER fails, continue quietly — seeding will handle missing columns
+                import traceback
+                traceback.print_exc()
+            # Seed sample data if DB is empty or incomplete
+            try:
+                from .models import User, Club, Event
+                import datetime
+                import random
+
+                # 1. Ensure Users Exist
+                admin = User.query.filter_by(username='admin').first()
+                if not admin:
+                    admin = User(username='admin', email='admin@example.com', role='admin')
+                    admin.set_password('adminpass')
+                    db.session.add(admin)
+                    db.session.commit()
+
+                users = [admin]
+                user_names = ['alice', 'berat', 'efe', 'mehmet', 'ayse', 'fatma', 'ali', 'veli', 'zeynep', 'can']
+                
+                for name in user_names:
+                    u = User.query.filter_by(username=name).first()
+                    if not u:
+                        u = User(username=name, email=f'{name}@example.com')
+                        u.set_password('password123')
+                        db.session.add(u)
+                    users.append(u)
+                db.session.commit()
+                
+                all_users = User.query.all()
+
+                # 2. Sync Clubs (Create needed, Update existing, Delete unwanted)
+                target_clubs = [
+                    {'name': 'Bilişim ve Teknoloji Kulübü', 'desc': 'Yazılım, donanım ve teknoloji çalışmalarına odaklı kulüp.', 'img': 'teknoloji.jpg'},
+                    {'name': 'Spor ve Yaşam Kulübü', 'desc': 'Farklı spor dallarında etkinlikler ve turnuvalar.', 'img': 'spor.jpg'},
+                    {'name': 'Güzel Sanatlar Kulübü', 'desc': 'Resim ve heykel çalışmaları.', 'img': 'sanat.jpg'},
+                    {'name': 'Müzik Topluluğu', 'desc': 'Müzik pratikleri, konserler ve performanslar.', 'img': 'muzik.jpg'},
+                    {'name': 'Edebiyat ve Kültür Kulübü', 'desc': 'Okuma grupları ve edebi etkinlikler.', 'img': 'edebiyat.jpg'},
+                    {'name': 'Sahne Sanatları Kulübü', 'desc': 'Sahne sanatları ve oyunculuk atölyeleri.', 'img': 'tiyatro.jpg'}
+                ]
+                
+                target_names = [c['name'] for c in target_clubs]
+                
+                # Delete clubs not in target list
+                existing_clubs = Club.query.all()
+                for club in existing_clubs:
+                    if club.name not in target_names:
+                        Event.query.filter_by(club_id=club.id).delete()
+                        club.members = []
+                        db.session.delete(club)
+                db.session.commit()
+                
+                # Create or Update target clubs
+                for data in target_clubs:
+                    club = Club.query.filter_by(name=data['name']).first()
+                    image_path = f'/static/img/{data["img"]}'
+                    
+                    if club:
+                        club.description = data['desc']
+                        club.image_url = image_path
+                    else:
+                        president = random.choice(all_users)
+                        club = Club(
+                            name=data['name'],
+                            description=data['desc'],
+                            image_url=image_path,
+                            president_id=president.id
+                        )
+                        db.session.add(club)
+                    db.session.commit()
+
+                # 3. Ensure Events and Members Exist
+                clubs = Club.query.all()
+                for club in clubs:
+                    # Ensure at least 1 event
+                    if not club.events:
+                        for j in range(random.randint(1, 2)):
+                            days_offset = random.randint(5, 30)
+                            ev = Event(
+                                name=f'{club.name} Etkinliği {j+1}', 
+                                description=f'{club.name} tarafından düzenlenen harika bir etkinlik.', 
+                                date=datetime.datetime.now() + datetime.timedelta(days=days_offset), 
+                                location='Kampüs Merkezi', 
+                                club_id=club.id, 
+                                image_url=club.image_url
+                            )
+                            db.session.add(ev)
+                    
+                    # Ensure some members
+                    if not club.members:
+                        potential_members = [u for u in all_users if u.id != club.president_id]
+                        if potential_members:
+                            members_to_add = random.sample(potential_members, k=min(len(potential_members), random.randint(3, 6)))
+                            for m in members_to_add:
+                                club.members.append(m)
+                    
+                    db.session.commit()
+
+            except Exception:
+                import traceback
+                traceback.print_exc()
+        except Exception as e:
+            print(f"Error during app initialization: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
+    
+    return app
+
+
+==================================================
+DOSYA: .\app\static\css\style.css
+==================================================
+
+body {
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.3rem;
+}
+
+.jumbotron {
+    background-color: #e9ecef;
+    padding: 2rem;
+    border-radius: 0.5rem;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-0.5rem);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+h1, h2, h3 {
+    color: #333;
+    margin-bottom: 1.5rem;
+}
+
+.list-group-item {
+    border-left: 4px solid transparent;
+}
+
+.list-group-item:hover {
+    border-left-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+
+==================================================
+DOSYA: .\app\templates\about.html
+==================================================
+
+{% extends "base.html" %}
+
+{% block title %}Hakkımızda - Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <h1 class="display-3 mb-4">Hakkımızda</h1>
+        <p class="lead fs-4">Bu platform, öğrencilerin üniversite kulüplerini daha kolay yönetebilmeleri ve etkinliklerini duyurabilmeleri için geliştirilmiş bir sistemdir. Kulüp yöneticileri üye ekleyebilir, etkinlik planlayabilir ve duyurular oluşturabilir. Hedefimiz kampüs yaşamını zenginleştirmek ve öğrenciler arasında etkileşimi artırmaktır.</p>
+        <p class="lead fs-4">Platform: Basit, güvenli ve mobil uyumlu bir arayüz sunar. İhtiyaç halinde yöneticiler doğrudan sistem üzerinden iletişim kurabilirler.</p>
+    </div>
+</div>
+{% endblock %}
+
+
+==================================================
+DOSYA: .\app\templates\base.html
+==================================================
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kulüp Yönetim Sistemi{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">Kulüp Yönetim Sistemi</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('club.list_clubs') }}">Kulüpler</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.about') }}">Hakkımızda</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.contact') }}">İletişim</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('club.create_club') }}">Kulüp Oluştur</a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Çıkış Yap ({{ current_user.username }})</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">Giriş Yap</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light ms-2" href="{{ url_for('auth.register') }}">Üye Ol</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-dark text-white text-center py-4 mt-5">
+        <p>&copy; 2025 Kulüp Yönetim Sistemi. Tüm hakları saklıdır.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+==================================================
+DOSYA: .\app\templates\clubs.html
+==================================================
+
+{% extends 'base.html' %}
+
+{% block title %}Kulüpler - Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Tüm Kulüpler</h1>
+    {% if current_user.is_authenticated %}
+        <a href="{{ url_for('club.create_club') }}" class="btn btn-primary">Yeni Kulüp Oluştur</a>
+    {% endif %}
+</div>
+
+<div class="row">
+    {% if clubs %}
+        {% for club in clubs %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 p-3">
+                    <div class="row g-0 align-items-center">
+                        <div class="col-md-4 text-center">
+                            {% if club.image_url %}
+                            <img src="{{ club.image_url }}" class="img-fluid rounded-start" alt="{{ club.name }}" style="max-height: 150px; object-fit: contain;">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ club.name }}</h5>
+                                <p class="card-text">{{ club.description }}</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        Oluşturulma: {{ club.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                        <br>
+                                        Etkinlik Sayısı: {{ club.events|length }}
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0 d-flex gap-2 justify-content-end">
+                        <a href="{{ url_for('club.view_club', club_id=club.id) }}" class="btn btn-sm btn-primary">Detayları Gör</a>
+                        {% if current_user.is_authenticated and current_user.id == club.president_id %}
+                            <a href="{{ url_for('event.create_event', club_id=club.id) }}" class="btn btn-sm btn-success">Etkinlik Oluştur</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                Henüz kulüp bulunmamaktadır.
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+==================================================
+DOSYA: .\app\templates\club_detail.html
+==================================================
+
+{% extends "base.html" %}
+
+{% block title %}{{ club.name }} - Öğrenci Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        {% if club.image_url %}
+        <img src="{{ club.image_url }}" class="img-fluid rounded mb-3" alt="{{ club.name }}" style="max-height: 400px; width: 100%; object-fit: cover;">
+        {% endif %}
+        <h1>{{ club.name }}</h1>
+        <p class="lead">{{ club.description }}</p>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Üye Sayısı</h5>
+                <p class="card-text display-4">{{ club.members|length }}</p>
+                {% if current_user.is_authenticated %}
+                    {% if current_user in club.members %}
+                        <a href="{{ url_for('club.leave_club', club_id=club.id) }}" class="btn btn-outline-danger w-100">Kulüpten Ayrıl</a>
+                    {% else %}
+                        <a href="{{ url_for('club.join_club', club_id=club.id) }}" class="btn btn-primary w-100">Kulübe Üye Ol</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100">Üye Olmak İçin Giriş Yap</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <h2>Etkinlikler</h2>
+        {% if current_user.is_authenticated and current_user.role == 'admin' %}
+            <a href="{{ url_for('event.create_event', club_id=club.id) }}" class="btn btn-success mb-3">Yeni Etkinlik Oluştur</a>
+        {% endif %}
+        
+        {% if events %}
+            <div class="row">
+                {% for event in events %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ event.name }}</h5>
+                                <p class="card-text">{{ event.description }}</p>
+                                <p class="text-muted">
+                                    <small>Tarih: {{ event.date }}</small><br>
+                                    <small>Yer: {{ event.location }}</small>
+                                </p>
+                                <a href="{{ url_for('event.view_event', event_id=event.id) }}" class="btn btn-sm btn-primary">Detaylar</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Henüz etkinlik yok.</p>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <h3>Üyeler</h3>
+        <div class="list-group">
+            {% for member in club.members %}
+                <a href="#" class="list-group-item list-group-item-action">
+                    {{ member.username }}
+                    <small class="text-muted d-block">{{ member.email }}</small>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+==================================================
+DOSYA: .\app\templates\contact.html
+==================================================
+
+{% extends "base.html" %}
+
+{% block title %}İletişim - Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <h1>İletişim</h1>
+        <p>Her türlü soru, iş birliği veya destek talepleri için aşağıdaki iletişim bilgilerini kullanabilirsiniz:</p>
+        <ul>
+            <li><strong>E-posta:</strong> info@kulup-sitesi.example</li>
+            <li><strong>Telefon:</strong> +90 312 000 0000</li>
+            <li><strong>Adres:</strong> Ankara Bilim Üniversitesi, Kampüs</li>
+        </ul>
+        <p>Ayrıca isterseniz <a href="mailto:info@kulup-sitesi.example">info@kulup-sitesi.example</a> adresine mail gönderebilirsiniz.</p>
+    </div>
+</div>
+{% endblock %}
+
+
+==================================================
+DOSYA: .\app\templates\create_club.html
+==================================================
+
+{% extends 'base.html' %}
+
+{% block title %}Kulüp Oluştur - Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Yeni Kulüp Oluştur</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('club.create_club') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Kulüp Adı</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" name="description" rows="5" required></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('club.list_clubs') }}" class="btn btn-secondary">İptal</a>
+                        <button type="submit" class="btn btn-primary">Kulüp Oluştur</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+==================================================
+DOSYA: .\app\templates\create_event.html
+==================================================
+
+{% extends "base.html" %}
+
+{% block title %}Etkinlik Oluştur - Öğrenci Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3>{{ club.name }} - Yeni Etkinlik Oluştur</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Etkinlik Adı</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Tarih ve Saat</label>
+                        <input type="datetime-local" class="form-control" id="date" name="date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Yer</label>
+                        <input type="text" class="form-control" id="location" name="location">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Oluştur</button>
+                    <a href="{{ url_for('club.view_club', club_id=club.id) }}" class="btn btn-secondary">İptal</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+==================================================
+DOSYA: .\app\templates\event_detail.html
+==================================================
+
+{% extends "base.html" %}
+
+{% block title %}{{ event.name }} - Öğrenci Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>{{ event.name }}</h1>
+        <p>{{ event.description }}</p>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Etkinlik Bilgileri</h5>
+                <p><strong>Tarih:</strong> {{ event.date.strftime('%d.%m.%Y %H:%M') }}</p>
+                <p><strong>Yer:</strong> {{ event.location }}</p>
+                <p><strong>Kulüp:</strong> <a href="{{ url_for('club.view_club', club_id=event.club_id) }}">{{ event.club.name }}</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Katılımcılar</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Katılımcı Sayısı:</strong> {{ event.attendees|length }}</p>
+                <div class="list-group">
+                    {% for attendee in event.attendees %}
+                        <a href="#" class="list-group-item list-group-item-action">
+                            {{ attendee.username }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+==================================================
+DOSYA: .\app\templates\index.html
+==================================================
+
+{% extends 'base.html' %}
+
+{% block title %}Ana Sayfa - Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="jumbotron bg-light p-5 rounded">
+    <img src="{{ url_for('static', filename='img/hero_banner.png') }}" class="img-fluid rounded mb-4 w-100" alt="Kulüp Yönetim Sistemi">
+    <h1 class="display-2 fw-bold">Hoş Geldiniz!</h1>
+    <p class="lead">Kulüp Yönetim Sistemine hoş geldiniz. Kulüpleri keşfedin ve etkinliklere katılın.</p>
+    
+    <div class="mt-4 mb-4">
+        <ul class="list-unstyled fs-5">
+            <li class="mb-2">🎓 Kulüp üyeleri kolayca kayıt olabilir, profil oluşturabilir.</li>
+            <li class="mb-2">📅 Etkinlikler tek tıkla duyurulur, katılımlar takip edilir.</li>
+            <li class="mb-2">🗂️ Yöneticiler kulüp içi rolleri düzenleyebilir.</li>
+            <li class="mb-2">📢 Duyurular herkes tarafından hızlıca görüntülenir.</li>
+            <li class="mb-2">🤝 Kulüp içi iletişim güçlenir ve süreçler daha şeffaf hale gelir.</li>
+        </ul>
+    </div>
+
+    <hr class="my-4">
+    {% if not current_user.is_authenticated %}
+        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}" role="button">Giriş Yap</a>
+        <a class="btn btn-success btn-lg" href="{{ url_for('auth.register') }}" role="button">Üye Ol</a>
+    {% else %}
+        <a class="btn btn-primary btn-lg" href="{{ url_for('club.list_clubs') }}" role="button">Kulüpleri Gör</a>
+    {% endif %}
+</div>
+
+<hr class="my-5">
+
+<h2 class="mb-4">Popüler Kulüpler</h2>
+<div class="row">
+    {% if clubs %}
+        {% for club in clubs %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center p-3">
+                    {% if club.image_url %}
+                    <img src="{{ club.image_url }}" class="card-img-top mx-auto" alt="{{ club.name }}" style="height: 150px; width: auto; object-fit: contain;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ club.name }}</h5>
+                        <p class="card-text">{{ club.description[:100] }}...</p>
+                        <small class="text-muted">Oluşturulma: {{ club.created_at.strftime('%d.%m.%Y') }}</small>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('club.view_club', club_id=club.id) }}" class="btn btn-sm btn-primary">Detayları Gör</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">
+            Henüz kulüp bulunmamaktadır.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+==================================================
+DOSYA: .\app\templates\login.html
+==================================================
+
+{% extends "base.html" %}
+
+{% block title %}Giriş Yap - Öğrenci Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <img src="{{ url_for('static', filename='img/logo2.svg') }}" alt="Logo" style="height:72px;">
+                <h3 class="mt-2">Giriş Yap</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Kullanıcı Adı</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Şifre</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+                </form>
+                <p class="mt-3">Henüz hesabınız yok mu? <a href="{{ url_for('auth.register') }}">Kayıt olun</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+==================================================
+DOSYA: .\app\templates\register.html
+==================================================
+
+{% extends "base.html" %}
+
+{% block title %}Kayıt Ol - Öğrenci Kulüp Yönetim Sistemi{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3>Kayıt Ol</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Kullanıcı Adı</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-mail</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Şifre</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Kayıt Ol</button>
+                </form>
+                <p class="mt-3">Zaten hesabınız var mı? <a href="{{ url_for('auth.login') }}">Giriş yapın</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

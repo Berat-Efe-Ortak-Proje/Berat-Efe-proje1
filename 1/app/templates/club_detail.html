@@ -25,6 +25,13 @@
                 {% else %}
                     <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100">Üye Olmak İçin Giriş Yap</a>
                 {% endif %}
+                
+                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                    <hr>
+                    <form action="{{ url_for('club.delete_club', club_id=club.id) }}" method="POST" onsubmit="return confirm('Bu kulübü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.');">
+                        <button type="submit" class="btn btn-danger w-100">Kulübü Sil</button>
+                    </form>
+                {% endif %}
             </div>
         </div>
     </div>
