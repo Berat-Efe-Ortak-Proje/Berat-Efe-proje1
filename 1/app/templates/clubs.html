@@ -37,7 +37,7 @@
                     </div>
                     <div class="card-footer bg-transparent border-top-0 d-flex gap-2 justify-content-end">
                         <a href="{{ url_for('club.view_club', club_id=club.id) }}" class="btn btn-sm btn-primary">Detayları Gör</a>
-                        {% if current_user.is_authenticated and current_user.id == club.president_id %}
+                        {% if current_user.is_authenticated and (current_user.id == club.president_id or current_user.role == 'admin') %}
                             <a href="{{ url_for('event.create_event', club_id=club.id) }}" class="btn btn-sm btn-success">Etkinlik Oluştur</a>
                         {% endif %}
                         {% if current_user.is_authenticated and current_user.role == 'admin' %}
