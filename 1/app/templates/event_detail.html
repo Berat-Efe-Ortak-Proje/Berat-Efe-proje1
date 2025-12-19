@@ -14,6 +14,16 @@
                 <p><strong>Tarih:</strong> {{ event.date.strftime('%d.%m.%Y %H:%M') }}</p>
                 <p><strong>Yer:</strong> {{ event.location }}</p>
                 <p><strong>Kulüp:</strong> <a href="{{ url_for('club.view_club', club_id=event.club_id) }}">{{ event.club.name }}</a></p>
+                
+                {% if current_user.is_authenticated %}
+                    {% if current_user in event.attendees %}
+                        <a href="{{ url_for('event.leave_event', event_id=event.id) }}" class="btn btn-danger">Etkinlikten Ayrıl</a>
+                    {% else %}
+                        <a href="{{ url_for('event.join_event', event_id=event.id) }}" class="btn btn-success">Etkinliğe Katıl</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Katılmak için Giriş Yap</a>
+                {% endif %}
             </div>
         </div>
     </div>

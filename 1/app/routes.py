@@ -225,3 +225,27 @@ def create_event(club_id):
 def view_event(event_id):
     event = Event.query.get_or_404(event_id)
     return render_template('event_detail.html', event=event)
+
+@event_bp.route('/event/<int:event_id>/join')
+@login_required
+def join_event(event_id):
+    event = Event.query.get_or_404(event_id)
+    if current_user not in event.attendees:
+        event.attendees.append(current_user)
+        db.session.commit()
+        flash(f'{event.name} etkinliğine katıldınız!', 'success')
+    else:
+        flash(f'Zaten {event.name} etkinliğine katılıyorsunuz.', 'info')
+    return redirect(url_for('event.view_event', event_id=event_id))
+
+@event_bp.route('/event/<int:event_id>/leave')
+@login_required
+def leave_event(event_id):
+    event = Event.query.get_or_404(event_id)
+    if current_user in event.attendees:
+        event.attendees.remove(current_user)
+        db.session.commit()
+        flash(f'{event.name} etkinliğinden ayrıldınız.', 'warning')
+    else:
+        flash(f'{event.name} etkinliğine katılmıyorsunuz.', 'info')
+    return redirect(url_for('event.view_event', event_id=event_id))
