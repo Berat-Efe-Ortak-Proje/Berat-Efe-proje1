@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_user, logout_user, current_user, login_required
+from datetime import datetime
 from . import db
 from .models import User, Club, Event
 
@@ -158,9 +159,15 @@ def create_event(club_id):
     if request.method == 'POST':
         name = request.form.get('name')
         description = request.form.get('description')
-        date = request.form.get('date')
+        date_str = request.form.get('date')
         location = request.form.get('location')
         
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            flash('Geçersiz tarih formatı.', 'danger')
+            return redirect(url_for('event.create_event', club_id=club_id))
+
         event = Event(name=name, description=description, date=date, 
                      location=location, club_id=club_id)
         db.session.add(event)
