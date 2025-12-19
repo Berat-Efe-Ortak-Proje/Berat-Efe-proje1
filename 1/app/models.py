@@ -39,6 +39,16 @@ class Event(db.Model):
     
     attendees = db.relationship('User', secondary='event_attendees', backref='events')
 
+class ClubRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text)
+    status = db.Column(db.String(20), default='pending') # pending, approved, rejected
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    
+    user = db.relationship('User', backref='club_requests')
+
 club_members = db.Table('club_members',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('club_id', db.Integer, db.ForeignKey('club.id'), primary_key=True)

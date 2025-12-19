@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_user, logout_user, current_user, login_required
 from datetime import datetime
 from . import db
-from .models import User, Club, Event
+from .models import User, Club, Event, ClubRequest
 
 # Blueprints
 auth_bp = Blueprint('auth', __name__)
@@ -89,22 +89,55 @@ def list_clubs():
 @club_bp.route('/club/create', methods=['GET', 'POST'])
 @login_required
 def create_club():
-    if current_user.role != 'admin':
-        flash('Bu işlem için yönetici yetkisi gerekiyor.', 'danger')
-        return redirect(url_for('club.list_clubs'))
-
     if request.method == 'POST':
         name = request.form.get('name')
         description = request.form.get('description')
         
-        club = Club(name=name, description=description, president_id=current_user.id)
-        db.session.add(club)
-        db.session.commit()
+        if current_user.role == 'admin':
+            club = Club(name=name, description=description, president_id=current_user.id)
+            db.session.add(club)
+            db.session.commit()
+            flash('Kulüp başarıyla oluşturuldu!', 'success')
+        else:
+            club_req = ClubRequest(name=name, description=description, user_id=current_user.id)
+            db.session.add(club_req)
+            db.session.commit()
+            flash('Kulüp açma isteğiniz yöneticiye iletildi. Onaylandığında kulübünüz açılacaktır.', 'info')
         
-        flash('Kulüp başarıyla oluşturuldu!', 'success')
         return redirect(url_for('club.list_clubs'))
     
     return render_template('create_club.html')
+
+@club_bp.route('/admin/requests')
+@login_required
+def list_requests():
+    if current_user.role != 'admin':
+        flash('Yetkisiz erişim.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    requests = ClubRequest.query.filter_by(status='pending').all()
+    return render_template('admin_requests.html', requests=requests)
+
+@club_bp.route('/admin/request/<int:req_id>/<action>')
+@login_required
+def handle_request(req_id, action):
+    if current_user.role != 'admin':
+        return redirect(url_for('main.index'))
+        
+    req = ClubRequest.query.get_or_404(req_id)
+    
+    if action == 'approve':
+        req.status = 'approved'
+        # Create the club
+        club = Club(name=req.name, description=req.description, president_id=req.user_id)
+        db.session.add(club)
+        flash(f'{req.name} kulübü onaylandı ve oluşturuldu.', 'success')
+    elif action == 'reject':
+        req.status = 'rejected'
+        flash(f'{req.name} kulübü isteği reddedildi.', 'warning')
+        
+    db.session.commit()
+    return redirect(url_for('club.list_requests'))
 
 @club_bp.route('/club/<int:club_id>')
 def view_club(club_id):

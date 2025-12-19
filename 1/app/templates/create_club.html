@@ -7,9 +7,14 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Yeni Kulüp Oluştur</h4>
+                <h4 class="mb-0">{% if current_user.role == 'admin' %}Yeni Kulüp Oluştur{% else %}Kulüp Açma İsteği Gönder{% endif %}</h4>
             </div>
             <div class="card-body">
+                {% if current_user.role != 'admin' %}
+                <div class="alert alert-info">
+                    Kulüp açma isteğiniz yönetici onayına sunulacaktır. Onaylandığında kulübünüz aktif hale gelecektir.
+                </div>
+                {% endif %}
                 <form method="POST" action="{{ url_for('club.create_club') }}">
                     <div class="mb-3">
                         <label for="name" class="form-label">Kulüp Adı</label>
@@ -23,7 +28,7 @@
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <a href="{{ url_for('club.list_clubs') }}" class="btn btn-secondary">İptal</a>
-                        <button type="submit" class="btn btn-primary">Kulüp Oluştur</button>
+                        <button type="submit" class="btn btn-primary">{% if current_user.role == 'admin' %}Kulüp Oluştur{% else %}İstek Gönder{% endif %}</button>
                     </div>
                 </form>
             </div>
