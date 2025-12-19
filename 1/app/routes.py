@@ -70,6 +70,16 @@ def about():
 def contact():
     return render_template('contact.html')
 
+@main_bp.route('/admin/users')
+@login_required
+def list_users():
+    if current_user.role != 'admin':
+        flash('Bu işlem için yönetici yetkisi gerekiyor.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    users = User.query.all()
+    return render_template('admin_users.html', users=users)
+
 # Club Routes
 @club_bp.route('/clubs')
 def list_clubs():
